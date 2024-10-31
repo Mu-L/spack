@@ -50,7 +50,6 @@ from urllib.request import urlopen
 
 import llnl.util.lang
 
-import spack.builder
 import spack.config
 import spack.patch
 import spack.repo
@@ -642,8 +641,9 @@ def _ensure_env_methods_are_ported_to_builders(pkgs, error_cls):
         buildsystem_variant, _ = pkg_cls.variants["build_system"]
         buildsystem_names = [getattr(x, "value", x) for x in buildsystem_variant.values]
         builder_cls_names = [spack.builder.BUILDER_CLS[x].__name__ for x in buildsystem_names]
+        module = pkg_cls.module
         has_builders_in_package_py = any(
-            spack.builder.get_builder_class(pkg_cls, name) for name in builder_cls_names
+            getattr(module, name, False) for name in builder_cls_names
         )
         if not has_builders_in_package_py:
             continue
