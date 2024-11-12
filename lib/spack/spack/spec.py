@@ -665,7 +665,8 @@ class DeprecatedCompilerSpec(lang.DeprecatedProperty):
             deps = instance.dependencies(virtuals=language)
             if deps:
                 return CompilerSpec(deps[0])
-        return CompilerSpec(Spec())
+
+        raise AttributeError(f"{instance} has no C, C++, or Fortran compiler")
 
 
 @lang.lazy_lexicographic_ordering
@@ -3950,6 +3951,9 @@ class Spec:
                     try:
                         current = getattr(current, part)
                     except AttributeError:
+                        if part == "compiler":
+                            return "none"
+
                         raise SpecFormatStringError(
                             f"Attempted to format attribute {attribute}. "
                             f"Spec {'.'.join(parts[:idx])} has no attribute {part}"

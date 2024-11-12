@@ -1811,7 +1811,7 @@ complete -c spack -n '__fish_spack_using_command find' -s c -l show-concretized 
 complete -c spack -n '__fish_spack_using_command find' -s f -l show-flags -f -a show_flags
 complete -c spack -n '__fish_spack_using_command find' -s f -l show-flags -d 'show spec compiler flags'
 complete -c spack -n '__fish_spack_using_command find' -l show-full-compiler -f -a show_full_compiler
-complete -c spack -n '__fish_spack_using_command find' -l show-full-compiler -d '(DEPRECATED) show full compiler specs'
+complete -c spack -n '__fish_spack_using_command find' -l show-full-compiler -d '(DEPRECATED) show full compiler specs. Currently it'"'"'s a no-op'
 complete -c spack -n '__fish_spack_using_command find' -s x -l explicit -f -a explicit
 complete -c spack -n '__fish_spack_using_command find' -s x -l explicit -d 'show only specs that were installed explicitly'
 complete -c spack -n '__fish_spack_using_command find' -s X -l implicit -f -a implicit

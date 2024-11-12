@@ -1941,17 +1941,14 @@ class PackageBase(WindowsRPath, PackageViewMixin, RedistributionMixin, metaclass
         return resource_stage_folder
 
     def do_test(self, dirty=False, externals=False):
-        if self.test_requires_compiler:
-            compilers = spack.compilers.config.compilers_for_spec(
-                self.spec.compiler, arch_spec=self.spec.architecture
+        if self.test_requires_compiler and not any(
+            lang in self.spec for lang in ("c", "cxx", "fortran")
+        ):
+            tty.error(
+                f"Skipping tests for package {self.spec}, since a compiler is required, "
+                f"but not available"
             )
-            if not compilers:
-                tty.error(
-                    "Skipping tests for package %s\n"
-                    % self.spec.format("{name}-{version}-{hash:7}")
-                    + "Package test requires missing compiler %s" % self.spec.compiler
-                )
-                return
+            return
 
         kwargs = {
             "dirty": dirty,
