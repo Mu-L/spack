@@ -1,3 +1,174 @@
+# v0.23.0 (2024-11-13)
+
+`v0.23.0` is a major feature release
+
+## Features in this Release
+
+1. Spec splicing #39136 and #46729. Splicing allows Spack to redeploy
+   an existing spec with different dependencies than how it was
+   built. There are two interfaces to splicint.
+
+   PR #39136 introduced the explicit splicing interface. In the
+   concretizer config, you can specify a target spec and a replacement
+   by hash.
+
+   concretizer:
+     splice:
+       explicit:
+       - target: mpi
+         replacement: mpich/abcdef
+
+   Every splice that is naturally concretized to depend on a spec
+   matching the target spec will be spliced to depend on the
+   replacement spec instead. It is on the user to guarantee ABI
+   compatibility between the target and replacement spec, and we
+   expect this mode to be most useful for ABI compatibility research.
+
+   PR #46729 introduced the automatic splicing interface. In the
+   concretizer config, enable automatic splicing:
+
+   concretizer:
+     splice:
+       automatic: true
+
+   The concretizer will select splices for ABI compatibility to
+   maximize package reuse. Packages can denote ABI compatibility using
+   the ``can_splice`` directive. No packages denote ABI compatibility
+   yet in this release.
+
+2. Allow variant propagation from packages that do not contain the variant (#42931)
+
+   Now you can specify propagated variants like `hdf5
+   build_type==RelWithDebInfo` to propagate a variant to all
+   dependencies for which it is relevant, even if it cannot be
+   relevant to the root.
+
+3. `spack env track` command (#41897). `spack env track` takes a
+   non-managed Spack environment and symlinks it to the Spack
+   `environments_root` directory so that it will be included for
+   reference counting for commands like `spack uninstall` and `spack
+   gc`. Includes symmetric `env untrack` command.
+
+4. Allow spec queries by namespace (#45416). Now users can query things like
+
+   spack find zlib namespace=builtin
+   spack find zlib namespace=myrepo
+
+   This was previously impossible because the spec syntax only allowed namespaces
+   in the context of a name, e.g. `zlib.builtin`. The previous syntax is unchanged.
+
+4. Add depends_on([c,cxx,fortran]) #45217: Your packages can
+   explicitly depend on the languages they require. Historically,
+   Spack has considered C, C++, and Fortran compiler dependencies to
+   be implicit. In Spack v1.0.0, you will need to ensure that new
+   packages add relevant languages as dependencies like this:
+
+   depends_on("c", type="build")
+   depends_on("cxx", type="build")
+   depends_on("fortran", type="build")
+
+   You will not have to add this to packages that don't need these
+   languages, e.g., pure python packages. In Spack v0.23.0, you can add
+   these annotations to begin preparing for Spack v1.0.0.
+
+   We have already auto-generated these dependencies for existing
+   packages in #45217, based on the types of source files present in
+   packages' source archives. We may have added too many or too few
+   language dependencies, so please correct your packages as needed by
+   submitting a pull request.
+
+## Highlighted bugfixes
+
+1. concretize.lp: drop 0 weight of external providers #45025: Before,
+   Spack was considering an external provider for a virtual as good as
+   the preferred provider. After the change, the provider will keep
+   its normal ranking. This means that if e.g. openmpi is the
+   preferred mpi, and there's an entry for mpich in externals, then a
+   new openmpi will be built - if building it is possible. To play
+   well with externals, spack external find --not-buildable will mark
+   virtuals as not buildable too, when a provider is detected.
+
+2. Mixed source cflags (#41049) Fixes a longstanding bug that
+   concretization would fail for some combinations of compiler flags
+   from multiple sources of CLI, packages.yaml requirements, and
+   compilers.yaml. Changes compiler flags ordering to be tracked by
+   the solver instead of as post-solve step.
+
+3. Fix concretizer unification for included environments
+   (#45139). This PR also includes new syntax to control reuse
+   semantics for specs from included environments.
+
+## Deprecations, removals, and syntax changes
+
+1. Remove the old concretizer #45215: The old concretizer has been
+   removed from Spack, together with the associated config option. A
+   warning is emitted if the option is present in user configuration,
+   since it has now no effect. When clingo needs to be bootstrapped
+   from sources, a JSON prototype is tweaked to get a correct concrete
+   spec.
+
+2. Avoid best-effort expansion of stacks #40792: best-effort expansion
+   of spec matrices has been removed. It was already not working for
+   the new concretizer, and buggy with the old one. After Remove the
+   old concretizer #45215 it didn't make sense to keep it.
+
+3. Deprecate Cray platform, based on PE modules #43796: support for
+   platform=cray is discontinued, and any mention of platform=cray has
+   been removed from core and packages.
+
+4. Deprecate `config:install_missing_compilers` #46237: The
+   `config:install_missing_compilers` config option has been
+   deprecated, and is a no-op when set in v0.23. It will be replaced
+   with a less bug-riddled mechanism in v1.0.
+
+5. Remove deprecated config options #44061: The config options that
+   have been deprecated in v0.21 are now removed in v0.23
+
+6. Remove deprecated methods for package testing #45752. The old
+   interface was deprecated in v0.22.0 (#34236) and are now removed in
+   v0.23.0. All packages are updated to use the new interface in
+   v0.23.0 as well.
+
+7. Removed best-effort expansion of spec matrices in environments
+   #40792: This feature did not work properly with the "new" ASP-based
+   concretizer, and did not work with `unify: True` or `unify:
+   when_possible`. Use the `exclude` key for the environment to
+   exclude invalid components, or use multiple spec matrices to
+   combine the list of specs for which the constraint is valid and the
+   list of specs for which it is not.
+
+## Binary caches
+1. Public binary caches now include an ML stack for Linux/aarch64
+   (#39666) We now build an ML stack for Linux/aarch64 for all pull
+   requests and on develop. The ML stack includes both CPU-only and
+   CUDA builds for Horovod, Hugging Face, JAX, Keras,
+   PyTorch,scikit-learn, TensorBoard, and TensorFlow, and related
+   packages. The CPU-only stack also includes XGBoost.
+
+## Other notable changes
+* Unification configuration for the concretizer is applied outside environments (#44843, #47556)
+* Spec splices are now robust to duplicate nodes with the same name in a spec (#46382)
+* Cache per-compiler libc calculations for performance (#47213)
+* Windows bootstrapping `file` and `gpg` (#41810)
+* `scripts` directory added to PATH on Windows for python extensions (#45427)
+* Fix `spack load --list` and `spack unload` on Windows (#35720)
+* variants: refactor internal dictionary to be when-keyed for consistency (#44425)
+* Fixed a bug in external detection for openmpi (#47541)
+* Add environment variable expansion options for mirrors.yaml (#46549)
+* Fix patched dependencies across separate package repositories (#42463)
+* Default library search caps maximum depth (#41945)
+* Unify interface for `spack spec` and `spack solve` commands (#47182)
+* `spack gc` can now be restricted to specific specs (#46790)
+* Spack no longer RPATHs directories in the default library search path (#44686)
+* Deduplicate RPATH entries in Spack compiler wrappers (#46536)
+* Improved performance of Spack database (#46554)
+* Enable package reuse for packages with versions from git refs (#43859)
+* Improved handling for `uuid` virtual on macos (#43002)
+* Improved tracking of task queueing/requeueing in the installer (#46293)
+* archspec updated to v0.2.5
+* Builtin repo now has 8307 packages
+* Over 2000 pull requests updated package recipes
+
 # v0.22.2 (2024-09-21)
 
 ## Bugfixes
@@ -419,7 +590,7 @@
 - spack graph: fix coloring with environments (#41240)
 - spack info: sort variants in --variants-by-name (#41389)
 - Spec.format: error on old style format strings (#41934)
-- ASP-based solver: 
+- ASP-based solver:
   - fix infinite recursion when computing concretization errors (#41061)
   - don't error for type mismatch on preferences (#41138)
   - don't emit spurious debug output (#41218)
