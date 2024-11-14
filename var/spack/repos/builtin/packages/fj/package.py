@@ -17,6 +17,9 @@ class Fj(Package, CompilerPackage):
 
     maintainers("t-karatsu")
 
+    provides("c", "cxx")
+    provides("fortran")
+
     def install(self, spec, prefix):
         raise InstallError(
             "Fujitsu compilers are not installable yet, but can be "

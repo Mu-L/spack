@@ -329,6 +329,9 @@ class Acfl(Package, CompilerPackage):
     provides("lapack")
     provides("fftw-api@3")
 
+    provides("c", "cxx")
+    provides("fortran")
+
     # Licensing - Not required from 22.0.1 on.
 
     # Run the installer with the desired install directory

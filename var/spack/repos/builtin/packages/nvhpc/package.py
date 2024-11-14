@@ -453,6 +453,9 @@ class Nvhpc(Package, CompilerPackage):
 
     requires("%gcc", msg="nvhpc must be installed with %gcc")
 
+    provides("c", "cxx")
+    provides("fortran")
+
     # For now we only detect compiler components
     # It will require additional work to detect mpi/lapack/blas components
     compiler_languages = ["c", "cxx", "fortran"]

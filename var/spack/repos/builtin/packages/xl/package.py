@@ -17,6 +17,9 @@ class Xl(Package, CompilerPackage):
 
     variant("r", default=True, description="The _r version of compilers")
 
+    provides("c", "cxx")
+    provides("fortran")
+
     def install(self, spec, prefix):
         raise InstallError(
             "XL compilers are not installable yet, but can be "
